@@ -1,7 +1,13 @@
 name: y_lints
-description: Custom lint rules for enforcing architectural boundaries in a Flutter project.
+description: Custom lint rules that enforce clean architecture boundaries (domain, data, presentation) in Dart and Flutter projects.
 version: 0.0.1
-publish_to: 'none'
+
+topics:
+  - lint
+  - architecture
+  - clean-architecture
+  - custom-lint
+  - flutter
 
 environment:
   sdk: ^3.9.2

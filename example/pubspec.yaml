@@ -1,0 +1,12 @@
+name: y_lints_example
+description: Example showing how to enable y_lints in a Dart project.
+publish_to: 'none'
+version: 0.0.1
+
+environment:
+  sdk: ^3.9.2
+
+dev_dependencies:
+  custom_lint: ^0.7.0
+  y_lints:
+    path: ../
