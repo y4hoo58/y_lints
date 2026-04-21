@@ -109,6 +109,8 @@ lib/
 | `class_suffix_convention` | Public class names carry the suffix matching their layer (`Entity`, `Repository`, `Model`, `Cubit`, …). |
 | `required_annotation` | Classes in each layer carry the annotation the layer requires. |
 | `dispose_leak` | Classes that define `dispose()`/`close()` must clean up disposable fields (`TextEditingController`, `ScrollController`, `AnimationController`, `StreamController`, `StreamSubscription`, `Timer`, `FocusNode`, `ChangeNotifier`, …). |
+| `listener_leak` | Every `addListener` / `addObserver` must be paired with `removeListener` / `removeObserver` in `dispose()` / `close()`. Inline-closure listeners are flagged separately since they can't be removed. |
+| `domain_entity_immutable_fields` | Instance fields on `@DomainEntity` classes must be `final`. |
 
 ## Disabling a rule
 

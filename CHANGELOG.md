@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.8
+
+- New rule `listener_leak`: every `addListener` / `addObserver` call in a
+  class that defines `dispose()` / `close()` must be paired with a matching
+  `removeListener` / `removeObserver` in the lifecycle method (same
+  receiver, same callback identifier). Inline-closure listeners are
+  reported under a separate `listener_leak_closure` diagnostic — they
+  can't be removed since each call creates a new `Function` instance.
+- New rule `domain_entity_immutable_fields`: instance fields on
+  `@DomainEntity` classes must be `final` (or `const`). `static` fields
+  are exempt; `late` alone is not enough — use `late final`.
+
 ## 0.0.7
 
 - New rule `dispose_leak`: flags disposable fields

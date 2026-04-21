@@ -21,6 +21,11 @@ class DomainEntityPurity extends ArchitectureRule {
         '@DomainEntity constructors must take named parameters only.',
   );
 
+  static const _immutable = LintCode(
+    name: 'domain_entity_immutable_fields',
+    problemMessage: '@DomainEntity instance fields must be final.',
+  );
+
   @override
   String get annotationName => 'DomainEntity';
 
@@ -36,6 +41,11 @@ class DomainEntityPurity extends ArchitectureRule {
           reporter.atNode(param, _namedOnly);
         }
       }
+    }
+    for (final field in node.members.whereType<FieldDeclaration>()) {
+      if (field.isStatic) continue;
+      if (field.fields.isFinal || field.fields.isConst) continue;
+      reporter.atNode(field, _immutable);
     }
   }
 }
