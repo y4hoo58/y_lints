@@ -1,12 +1,14 @@
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../config/y_lints_config.dart';
 import '../_shared/_architecture_rule.dart';
 
 class RemoteDataSourcePurity extends ArchitectureRule {
-  const RemoteDataSourcePurity()
+  RemoteDataSourcePurity({YLintsConfig? config})
       : super(
           locationCode: _location,
           fileNameCode: _fileName,
+          config: config,
         );
 
   static const _location = LintCode(
@@ -25,11 +27,8 @@ class RemoteDataSourcePurity extends ArchitectureRule {
   String get annotationName => 'RemoteDataSource';
 
   @override
-  bool isAllowedPath(String filePath) {
-    final match = RegExp(r'/lib/data/datasources/[^/]+/implementations/[^/]+\.dart$')
-        .hasMatch(filePath);
-    return match;
-  }
+  bool isAllowedPath(String filePath) =>
+      config.datasourceImplementationPath.hasMatch(filePath);
 
   @override
   bool isAllowedFileName(String fileName) => fileName.startsWith('remote_');

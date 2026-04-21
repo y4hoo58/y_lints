@@ -3,6 +3,7 @@ import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../config/y_lints_config.dart';
 import '../_shared/_architecture_rule.dart';
 
 /// Enforces `@FeatureBuilder` classes:
@@ -14,7 +15,8 @@ import '../_shared/_architecture_rule.dart';
 /// originates from `package:flutter/` — a user-defined class merely named
 /// `StatelessWidget` will not satisfy the rule.
 class FeatureBuilderPurity extends ArchitectureRule {
-  const FeatureBuilderPurity() : super(locationCode: _location);
+  FeatureBuilderPurity({YLintsConfig? config})
+      : super(locationCode: _location, config: config);
 
   static const _location = LintCode(
     name: 'feature_builder_location',
@@ -35,14 +37,12 @@ class FeatureBuilderPurity extends ArchitectureRule {
 
   static const _flutterWidgetNames = {'StatelessWidget', 'StatefulWidget'};
 
-  static final RegExp _path =
-      RegExp(r'/lib/presentation/[^/]+/view/[^/]+\.dart$');
-
   @override
   String get annotationName => 'FeatureBuilder';
 
   @override
-  bool isAllowedPath(String filePath) => _path.hasMatch(filePath);
+  bool isAllowedPath(String filePath) =>
+      config.featureViewPath.hasMatch(filePath);
 
   @override
   void checkClassStructure(ClassDeclaration node, ErrorReporter reporter) {

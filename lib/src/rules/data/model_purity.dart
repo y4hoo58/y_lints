@@ -3,14 +3,16 @@ import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../config/y_lints_config.dart';
 import '../_shared/_architecture_rule.dart';
 import '../_shared/y_lints_annotation.dart';
 
 class ModelPurity extends ArchitectureRule {
-  const ModelPurity()
+  ModelPurity({YLintsConfig? config})
       : super(
           locationCode: _location,
           fileNameCode: _fileName,
+          config: config,
         );
 
   static const _location = LintCode(
@@ -33,7 +35,7 @@ class ModelPurity extends ArchitectureRule {
 
   @override
   bool isAllowedPath(String filePath) =>
-      filePath.contains('/lib/data/models/');
+      filePath.contains(config.dataModels);
 
   @override
   bool isAllowedFileName(String fileName) => fileName.endsWith('_model.dart');

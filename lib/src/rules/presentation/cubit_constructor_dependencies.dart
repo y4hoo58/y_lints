@@ -1,35 +1,30 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-import '../_shared/boundary_type.dart';
 import '../_shared/y_lints_annotation.dart';
 
-/// Restricts what a `@FeatureCubit` constructor is allowed to depend on.
+/// Blocks datasources from reaching `@FeatureCubit` constructors.
 ///
-/// Cubits are presentation orchestrators. They should talk to the domain
-/// through repository contracts — nothing else. This rule inspects every
-/// constructor parameter on a `@FeatureCubit` class and accepts only:
+/// Cubits are presentation orchestrators. Repositories, value objects, and
+/// the user's own services are all fair game — but datasources should
+/// never be injected directly: they're the concrete infrastructure that
+/// repositories exist to hide.
 ///
-///   - `void`, primitives (`bool`, `int`, `double`, `num`, `String`),
-///     `dart:core` value types (`DateTime`, `Duration`, `Uri`), `dynamic`,
-///     `Null`, `Object`
-///   - async / collection wrappers (`Future`, `FutureOr`, `Stream`, `List`,
-///     `Map`, `Set`, `Iterable`) whose inner types are themselves allowed
-///   - any enum
-///   - any class carrying `@Repository` (domain contract)
-///   - any class carrying `@DomainEntity` (initial/seed domain data)
+/// Rejected parameter types (including inside `Future<…>`, `List<…>`, …):
+///   - any class carrying `@DataSource`, `@RemoteDataSource`, or
+///     `@MockDataSource`
 ///
-/// Classification runs against the resolved element, not the name.
-/// A class called `FooRepository` that never declared `@Repository` does
-/// *not* pass — which is the point: infrastructure can masquerade with the
-/// right suffix, but it cannot fake the annotation.
+/// Everything else is allowed. Detection runs against the resolved
+/// element's annotation — never the name.
 ///
 /// Resolution covers:
-///   - `FooCubit(AuthRepository repo)` (plain parameter)
-///   - `FooCubit({required AuthRepository repo})` (named/optional)
-///   - `FooCubit(this._authRepository)` (field-initialising; looks up the
-///     field's declared type when the parameter itself has no annotation)
+///   - `FooCubit(AuthDataSource ds)`               (plain parameter)
+///   - `FooCubit({required AuthDataSource ds})`    (named/optional)
+///   - `FooCubit(this._authDataSource)`            (field-initialising;
+///     falls back to the field's declared type when the parameter has
+///     no explicit annotation)
 ///
 /// `super.x` and function-typed parameters are skipped.
 class CubitConstructorDependencies extends DartLintRule {
@@ -38,10 +33,14 @@ class CubitConstructorDependencies extends DartLintRule {
   static const _code = LintCode(
     name: 'cubit_constructor_dependencies',
     problemMessage:
-        '@FeatureCubit constructors may only depend on @Repository contracts, @DomainEntity types, enums, or primitives. Inject a repository, not a *Impl, *DataSource, Dio, or other infrastructure.',
+        '@FeatureCubit constructors must not depend on datasources. Route through a @Repository contract.',
   );
 
-  static const _allowed = {'Repository', 'DomainEntity'};
+  static const _forbiddenAnnotations = {
+    'DataSource',
+    'RemoteDataSource',
+    'MockDataSource',
+  };
 
   @override
   void run(
@@ -93,10 +92,16 @@ class CubitConstructorDependencies extends DartLintRule {
 
   void _checkType(TypeAnnotation type, ErrorReporter reporter) {
     if (type is! NamedType) return;
-    final allowed = isAllowedBoundaryType(
-      type.type,
-      markerAnnotations: _allowed,
-    );
-    if (!allowed) reporter.atNode(type, _code);
+    if (_containsForbidden(type.type)) {
+      reporter.atNode(type, _code);
+    }
+  }
+
+  bool _containsForbidden(DartType? type) {
+    if (type is! InterfaceType) return false;
+    if (elementHasYLintsAnnotation(type.element3, _forbiddenAnnotations)) {
+      return true;
+    }
+    return type.typeArguments.any(_containsForbidden);
   }
 }

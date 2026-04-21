@@ -1,12 +1,14 @@
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../config/y_lints_config.dart';
 import '../_shared/_architecture_rule.dart';
 
 class DataSourcePurity extends ArchitectureRule {
-  const DataSourcePurity()
+  DataSourcePurity({YLintsConfig? config})
       : super(
           locationCode: _location,
           fileNameCode: _fileName,
+          config: config,
         );
 
   static const _location = LintCode(
@@ -26,7 +28,7 @@ class DataSourcePurity extends ArchitectureRule {
 
   @override
   bool isAllowedPath(String filePath) {
-    const root = '/lib/data/datasources/';
+    final root = config.dataDatasources;
     final idx = filePath.indexOf(root);
     if (idx < 0) return false;
     final tail = filePath.substring(idx + root.length);

@@ -1,10 +1,10 @@
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import 'src/config/y_lints_config.dart';
 import 'src/rules/_shared/class_suffix_convention.dart';
 import 'src/rules/_shared/required_annotation.dart';
 import 'src/rules/data/data_source_purity.dart';
 import 'src/rules/data/datasource_contract_implemented.dart';
-import 'src/rules/data/datasource_import_boundary.dart';
 import 'src/rules/data/datasource_returns_model.dart';
 import 'src/rules/data/mock_data_source_purity.dart';
 import 'src/rules/data/model_purity.dart';
@@ -23,24 +23,26 @@ PluginBase createPlugin() => _YLints();
 
 class _YLints extends PluginBase {
   @override
-  List<LintRule> getLintRules(CustomLintConfigs configs) => const [
-        DomainEntityPurity(),
-        RepositoryPurity(),
-        RepositoryImplPurity(),
-        DataSourcePurity(),
-        RemoteDataSourcePurity(),
-        MockDataSourcePurity(),
-        FeatureCubitPurity(),
-        FeatureStatePurity(),
-        ModelPurity(),
-        DatasourceReturnsModel(),
-        RepositoryReturnsEntity(),
-        RequiredAnnotation(),
-        DatasourceImportBoundary(),
-        CubitConstructorDependencies(),
-        ClassSuffixConvention(),
-        DatasourceContractImplemented(),
-        PagePurity(),
-        FeatureBuilderPurity(),
-      ];
+  List<LintRule> getLintRules(CustomLintConfigs configs) {
+    final config = YLintsConfig.fromLintConfigs(configs);
+    return [
+      DomainEntityPurity(config: config),
+      RepositoryPurity(config: config),
+      RepositoryImplPurity(config: config),
+      DataSourcePurity(config: config),
+      RemoteDataSourcePurity(config: config),
+      MockDataSourcePurity(config: config),
+      FeatureCubitPurity(config: config),
+      FeatureStatePurity(config: config),
+      ModelPurity(config: config),
+      const DatasourceReturnsModel(),
+      const RepositoryReturnsEntity(),
+      RequiredAnnotation(config: config),
+      const CubitConstructorDependencies(),
+      ClassSuffixConvention(config: config),
+      const DatasourceContractImplemented(),
+      const PagePurity(),
+      FeatureBuilderPurity(config: config),
+    ];
+  }
 }

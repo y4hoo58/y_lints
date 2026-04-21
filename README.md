@@ -104,9 +104,8 @@ lib/
 | `feature_builder_purity` | `@FeatureBuilder` classes live under `lib/presentation/<feature>/view/`, end with `Builder`, and extend `StatelessWidget`/`StatefulWidget`. |
 | `datasource_returns_model` | Datasource methods return `*Model` (or collections of them), not entities. |
 | `repository_returns_entity` | Repository methods return `*Entity` (or collections of them), not models. |
-| `datasource_import_boundary` | Datasources never import from `lib/domain/` or `lib/presentation/`. |
 | `datasource_contract_implemented` | Each `@DataSource` contract has at least one implementation (`@RemoteDataSource` or `@MockDataSource`). |
-| `cubit_constructor_dependencies` | Cubits only accept repository contracts as constructor dependencies. |
+| `cubit_constructor_dependencies` | Cubit constructors must not inject datasources. Everything else — repositories, value objects, services — is allowed. |
 | `class_suffix_convention` | Public class names carry the suffix matching their layer (`Entity`, `Repository`, `Model`, `Cubit`, …). |
 | `required_annotation` | Classes in each layer carry the annotation the layer requires. |
 
@@ -119,6 +118,45 @@ custom_lint:
   rules:
     - domain_entity_purity: false
 ```
+
+## Custom folder layout
+
+If your project doesn't live under `lib/domain`, `lib/data`, `lib/presentation`,
+override the layer roots through a `y_lints` config block:
+
+```yaml
+custom_lint:
+  rules:
+    - y_lints:
+        root: lib/            # default
+        domain: domain/       # default
+        data: data/           # default
+        presentation: presentation/  # default
+```
+
+All four fields are optional. For example, to rename `presentation/` to
+`ui/`:
+
+```yaml
+custom_lint:
+  rules:
+    - y_lints:
+        presentation: ui/
+```
+
+Or to move everything under `lib/src/`:
+
+```yaml
+custom_lint:
+  rules:
+    - y_lints:
+        root: lib/src/
+```
+
+Intra-layer folder names (`entities/`, `repositories/`, `models/`,
+`datasources/`, `cubits/`, `view/`) and file conventions
+(`i_*.dart`, `remote_*.dart`, `mock_*.dart`, `*_model.dart`, `*_cubit.dart`,
+`*_state.dart`) are fixed.
 
 ## License
 

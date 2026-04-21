@@ -5,7 +5,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import '../_shared/boundary_type.dart';
 import '../_shared/y_lints_annotation.dart';
 
-/// Ensures repository method signatures only expose domain-safe types.
+/// Ensures repository methods return only domain-safe types.
 ///
 /// Classification runs against the resolved type element, not the name:
 ///   - `void`, primitives (`bool`, `int`, `double`, `num`, `String`),
@@ -27,13 +27,10 @@ class RepositoryReturnsEntity extends DartLintRule {
   static const _code = LintCode(
     name: 'repository_returns_entity',
     problemMessage:
-        'Repository method signatures must use @DomainEntity types, enums, primitives, or void. Models belong in the data layer.',
+        'Repository methods must return @DomainEntity types, enums, primitives, or void.',
   );
 
-  static const _repositoryAnnotations = {
-    'Repository',
-    'RepositoryImpl',
-  };
+  static const _repositoryAnnotations = {'Repository', 'RepositoryImpl'};
 
   @override
   void run(
@@ -49,10 +46,6 @@ class RepositoryReturnsEntity extends DartLintRule {
 
         for (final member in cls.members.whereType<MethodDeclaration>()) {
           _checkType(member.returnType, reporter);
-          for (final param in member.parameters?.parameters ??
-              const <FormalParameter>[]) {
-            _checkType(_typeOf(param), reporter);
-          }
         }
       }
     });
@@ -65,12 +58,5 @@ class RepositoryReturnsEntity extends DartLintRule {
       markerAnnotations: const {'DomainEntity'},
     );
     if (!allowed) reporter.atNode(annotation, _code);
-  }
-
-  TypeAnnotation? _typeOf(FormalParameter p) {
-    if (p is DefaultFormalParameter) return _typeOf(p.parameter);
-    if (p is SimpleFormalParameter) return p.type;
-    if (p is FieldFormalParameter) return p.type;
-    return null;
   }
 }

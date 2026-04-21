@@ -2,6 +2,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../config/y_lints_config.dart';
 import 'y_lints_annotation.dart';
 
 /// Inverse of the per-layer purity rules.
@@ -17,7 +18,9 @@ import 'y_lints_annotation.dart';
 /// ignored — the rule is about public layer surface, not helpers or
 /// top-level functions/constants.
 class RequiredAnnotation extends DartLintRule {
-  const RequiredAnnotation() : super(code: _code);
+  RequiredAnnotation({YLintsConfig? config})
+      : config = config ?? const YLintsConfig(),
+        super(code: _code);
 
   static const _code = LintCode(
     name: 'required_annotation',
@@ -25,28 +28,30 @@ class RequiredAnnotation extends DartLintRule {
         'Public classes in this architectural layer must carry the matching annotation.',
   );
 
-  static final List<_Layer> _layers = [
+  final YLintsConfig config;
+
+  late final List<_Layer> _layers = [
     _Layer(
       annotation: 'DomainEntity',
-      matches: (path, file) => path.contains('/lib/domain/entities/'),
+      matches: (path, file) => path.contains(config.domainEntities),
     ),
     _Layer(
       annotation: 'Repository',
-      matches: (path, file) => path.contains('/lib/domain/repositories/'),
+      matches: (path, file) => path.contains(config.domainRepositories),
     ),
     _Layer(
       annotation: 'RepositoryImpl',
-      matches: (path, file) => path.contains('/lib/data/repositories/'),
+      matches: (path, file) => path.contains(config.dataRepositories),
     ),
     _Layer(
       annotation: 'Model',
       matches: (path, file) =>
-          path.contains('/lib/data/models/') && file.endsWith('_model.dart'),
+          path.contains(config.dataModels) && file.endsWith('_model.dart'),
     ),
     _Layer(
       annotation: 'DataSource',
       matches: (path, file) {
-        const root = '/lib/data/datasources/';
+        final root = config.dataDatasources;
         final idx = path.indexOf(root);
         if (idx < 0) return false;
         final tail = path.substring(idx + root.length);
@@ -56,29 +61,26 @@ class RequiredAnnotation extends DartLintRule {
     _Layer(
       annotation: 'RemoteDataSource',
       matches: (path, file) =>
-          _implPath.hasMatch(path) && file.startsWith('remote_'),
+          config.datasourceImplementationPath.hasMatch(path) &&
+          file.startsWith('remote_'),
     ),
     _Layer(
       annotation: 'MockDataSource',
       matches: (path, file) =>
-          _implPath.hasMatch(path) && file.startsWith('mock_'),
+          config.datasourceImplementationPath.hasMatch(path) &&
+          file.startsWith('mock_'),
     ),
     _Layer(
       annotation: 'FeatureCubit',
       matches: (path, file) =>
-          _cubitDir.hasMatch(path) && file.endsWith('_cubit.dart'),
+          config.cubitFilePath.hasMatch(path) && file.endsWith('_cubit.dart'),
     ),
     _Layer(
       annotation: 'FeatureState',
       matches: (path, file) =>
-          _cubitDir.hasMatch(path) && file.endsWith('_state.dart'),
+          config.cubitFilePath.hasMatch(path) && file.endsWith('_state.dart'),
     ),
   ];
-
-  static final RegExp _implPath =
-      RegExp(r'/lib/data/datasources/[^/]+/implementations/[^/]+\.dart$');
-  static final RegExp _cubitDir =
-      RegExp(r'/lib/presentation/[^/]+/cubits/[^/]+/[^/]+\.dart$');
 
   @override
   void run(

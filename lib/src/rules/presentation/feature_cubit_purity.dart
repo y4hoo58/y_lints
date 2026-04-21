@@ -1,12 +1,14 @@
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../config/y_lints_config.dart';
 import '../_shared/_architecture_rule.dart';
 
 class FeatureCubitPurity extends ArchitectureRule {
-  const FeatureCubitPurity()
+  FeatureCubitPurity({YLintsConfig? config})
       : super(
           locationCode: _location,
           fileNameCode: _fileName,
+          config: config,
         );
 
   static const _location = LintCode(
@@ -24,10 +26,8 @@ class FeatureCubitPurity extends ArchitectureRule {
   String get annotationName => 'FeatureCubit';
 
   @override
-  bool isAllowedPath(String filePath) {
-    return RegExp(r'/lib/presentation/[^/]+/cubits/[^/]+/[^/]+\.dart$')
-        .hasMatch(filePath);
-  }
+  bool isAllowedPath(String filePath) =>
+      config.cubitFilePath.hasMatch(filePath);
 
   @override
   bool isAllowedFileName(String fileName) => fileName.endsWith('_cubit.dart');

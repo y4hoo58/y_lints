@@ -2,6 +2,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../config/y_lints_config.dart';
 import 'y_lints_annotation.dart';
 
 /// Shared base for architectural lint rules.
@@ -14,16 +15,19 @@ import 'y_lints_annotation.dart';
 /// On match, violations are reported at the offending node (annotation node
 /// for location/filename errors).
 abstract class ArchitectureRule extends DartLintRule {
-  const ArchitectureRule({
+  ArchitectureRule({
     required LintCode locationCode,
     this.fileNameCode,
-  }) : super(code: locationCode);
+    YLintsConfig? config,
+  })  : config = config ?? const YLintsConfig(),
+        super(code: locationCode);
 
   String get annotationName;
   bool isAllowedPath(String filePath);
   bool isAllowedFileName(String fileName) => true;
 
   final LintCode? fileNameCode;
+  final YLintsConfig config;
 
   @override
   void run(

@@ -1,12 +1,14 @@
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../config/y_lints_config.dart';
 import '../_shared/_architecture_rule.dart';
 
 class MockDataSourcePurity extends ArchitectureRule {
-  const MockDataSourcePurity()
+  MockDataSourcePurity({YLintsConfig? config})
       : super(
           locationCode: _location,
           fileNameCode: _fileName,
+          config: config,
         );
 
   static const _location = LintCode(
@@ -25,10 +27,8 @@ class MockDataSourcePurity extends ArchitectureRule {
   String get annotationName => 'MockDataSource';
 
   @override
-  bool isAllowedPath(String filePath) {
-    return RegExp(r'/lib/data/datasources/[^/]+/implementations/[^/]+\.dart$')
-        .hasMatch(filePath);
-  }
+  bool isAllowedPath(String filePath) =>
+      config.datasourceImplementationPath.hasMatch(filePath);
 
   @override
   bool isAllowedFileName(String fileName) => fileName.startsWith('mock_');

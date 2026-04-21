@@ -3,6 +3,7 @@ import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../config/y_lints_config.dart';
 import 'y_lints_annotation.dart';
 
 /// Enforces class-name suffix conventions based on file location.
@@ -12,18 +13,22 @@ import 'y_lints_annotation.dart';
 /// so readers can identify a type's layer at a glance.
 ///
 /// Layer → suffix:
-///   - `lib/domain/entities/**`                   → `Entity`
-///   - `lib/domain/repositories/**`               → `Repository`
-///   - `lib/data/repositories/**`                 → `RepositoryImpl`
-///   - `lib/data/models/**_model.dart`            → `Model`
-///   - `lib/data/datasources/**`                  → `DataSource` (or `Datasource`)
-///   - `lib/presentation/**_cubit.dart`           → `Cubit`
-///   - `lib/presentation/**_state.dart`           → `State`
+///   - `domain/entities/**`                   → `Entity`
+///   - `domain/repositories/**`               → `Repository`
+///   - `data/repositories/**`                 → `RepositoryImpl`
+///   - `data/models/**_model.dart`            → `Model`
+///   - `data/datasources/**`                  → `DataSource` (or `Datasource`)
+///   - `presentation/**_cubit.dart`           → `Cubit`
+///   - `presentation/**_state.dart`           → `State`
+///
+/// Layer path prefixes are derived from the project's `YLintsConfig`.
 ///
 /// Private classes (leading `_`) are skipped — they're internal helpers,
 /// not layer surface.
 class ClassSuffixConvention extends DartLintRule {
-  const ClassSuffixConvention() : super(code: _code);
+  ClassSuffixConvention({YLintsConfig? config})
+      : config = config ?? const YLintsConfig(),
+        super(code: _code);
 
   static const _code = LintCode(
     name: 'class_suffix_convention',
@@ -31,38 +36,40 @@ class ClassSuffixConvention extends DartLintRule {
         'Class name does not match this layer\'s suffix convention.',
   );
 
-  static final List<_SuffixLayer> _layers = [
+  final YLintsConfig config;
+
+  late final List<_SuffixLayer> _layers = [
     _SuffixLayer(
       suffix: 'Entity',
-      matches: (path, file) => path.contains('/lib/domain/entities/'),
+      matches: (path, file) => path.contains(config.domainEntities),
     ),
     _SuffixLayer(
       suffix: 'Repository',
-      matches: (path, file) => path.contains('/lib/domain/repositories/'),
+      matches: (path, file) => path.contains(config.domainRepositories),
     ),
     _SuffixLayer(
       suffix: 'RepositoryImpl',
-      matches: (path, file) => path.contains('/lib/data/repositories/'),
+      matches: (path, file) => path.contains(config.dataRepositories),
     ),
     _SuffixLayer(
       suffix: 'Model',
       matches: (path, file) =>
-          path.contains('/lib/data/models/') && file.endsWith('_model.dart'),
+          path.contains(config.dataModels) && file.endsWith('_model.dart'),
     ),
     _SuffixLayer(
       suffix: 'DataSource',
       alternates: ['Datasource'],
-      matches: (path, file) => path.contains('/lib/data/datasources/'),
+      matches: (path, file) => path.contains(config.dataDatasources),
     ),
     _SuffixLayer(
       suffix: 'Cubit',
       matches: (path, file) =>
-          path.contains('/lib/presentation/') && file.endsWith('_cubit.dart'),
+          path.contains(config.presentation_) && file.endsWith('_cubit.dart'),
     ),
     _SuffixLayer(
       suffix: 'State',
       matches: (path, file) =>
-          path.contains('/lib/presentation/') && file.endsWith('_state.dart'),
+          path.contains(config.presentation_) && file.endsWith('_state.dart'),
     ),
   ];
 
@@ -109,13 +116,13 @@ class ClassSuffixConvention extends DartLintRule {
       }
     });
   }
-}
 
-bool _anyLayerSuffix(String name) {
-  for (final l in ClassSuffixConvention._layers) {
-    if (l.accepts.any(name.endsWith)) return true;
+  bool _anyLayerSuffix(String name) {
+    for (final l in _layers) {
+      if (l.accepts.any(name.endsWith)) return true;
+    }
+    return false;
   }
-  return false;
 }
 
 const _layerAnnotations = {
