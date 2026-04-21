@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.0.7
+
+- New rule `dispose_leak`: flags disposable fields
+  (`TextEditingController`, `ScrollController`, `AnimationController`,
+  `PageController`, `TabController`, `FocusNode`, `ChangeNotifier`,
+  `ValueNotifier`, `StreamController`, `StreamSubscription`, `Timer`) that
+  are not cleaned up in the class's `dispose()` / `close()` method. Runs
+  against the resolved element model and follows the supertype chain, so
+  subclasses of Flutter controllers are also tracked.
+- `cubit_constructor_dependencies` flipped from a whitelist to a
+  blacklist: only `@DataSource` / `@RemoteDataSource` / `@MockDataSource`
+  classes are rejected (including when nested inside `Future<…>`,
+  `List<…>`, etc.). Repositories, value objects, services, primitives,
+  enums, and the user's own classes are all allowed.
+- `repository_returns_entity` only checks return types again. Parameter
+  types are unconstrained — filter/query objects, request DTOs, and other
+  non-`Entity` types are allowed on the input side (matches the
+  `datasource_returns_model` behavior from 0.0.4).
+- **Breaking:** renamed lint IDs for consistency with the
+  `datasource_*` prefix used elsewhere:
+  - `data_source_location` / `data_source_filename` →
+    `datasource_location` / `datasource_filename`
+  - `remote_data_source_location` / `remote_data_source_filename` →
+    `remote_datasource_location` / `remote_datasource_filename`
+  - `mock_data_source_location` / `mock_data_source_filename` →
+    `mock_datasource_location` / `mock_datasource_filename`
+
+  Update any `analysis_options.yaml` entries that reference the old
+  identifiers.
+
 ## 0.0.6
 
 - Layer roots are now configurable via a `y_lints` block in

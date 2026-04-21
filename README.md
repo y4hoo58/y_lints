@@ -108,6 +108,7 @@ lib/
 | `cubit_constructor_dependencies` | Cubit constructors must not inject datasources. Everything else — repositories, value objects, services — is allowed. |
 | `class_suffix_convention` | Public class names carry the suffix matching their layer (`Entity`, `Repository`, `Model`, `Cubit`, …). |
 | `required_annotation` | Classes in each layer carry the annotation the layer requires. |
+| `dispose_leak` | Classes that define `dispose()`/`close()` must clean up disposable fields (`TextEditingController`, `ScrollController`, `AnimationController`, `StreamController`, `StreamSubscription`, `Timer`, `FocusNode`, `ChangeNotifier`, …). |
 
 ## Disabling a rule
 

@@ -13,6 +13,7 @@ import 'src/rules/data/repository_impl_purity.dart';
 import 'src/rules/domain/domain_entity_purity.dart';
 import 'src/rules/domain/repository_purity.dart';
 import 'src/rules/domain/repository_returns_entity.dart';
+import 'src/rules/hygiene/dispose_leak.dart';
 import 'src/rules/presentation/cubit_constructor_dependencies.dart';
 import 'src/rules/presentation/feature_builder_purity.dart';
 import 'src/rules/presentation/feature_cubit_purity.dart';
@@ -43,6 +44,7 @@ class _YLints extends PluginBase {
       const DatasourceContractImplemented(),
       const PagePurity(),
       FeatureBuilderPurity(config: config),
+      const DisposeLeak(),
     ];
   }
 }
