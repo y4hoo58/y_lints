@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../_shared/y_lints_annotation.dart';
+
 /// Enforces the suffix on `@Page`-annotated classes.
 ///
 /// Location and superclass are intentionally not constrained — pages are
@@ -22,9 +24,7 @@ class PagePurity extends DartLintRule {
   ) {
     context.registry.addCompilationUnit((unit) {
       for (final cls in unit.declarations.whereType<ClassDeclaration>()) {
-        final anno = cls.metadata
-            .where((a) => a.name.name == 'Page')
-            .firstOrNull;
+        final anno = findYLintsAnnotation(cls.metadata, const {'Page'});
         if (anno == null) continue;
 
         if (!cls.name.lexeme.endsWith('Page')) {

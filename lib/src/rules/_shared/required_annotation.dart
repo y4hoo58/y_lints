@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import 'y_lints_annotation.dart';
+
 /// Inverse of the per-layer purity rules.
 ///
 /// The purity rules only fire on *annotated* classes — so a class dropped
@@ -106,7 +108,7 @@ class RequiredAnnotation extends DartLintRule {
       if (publicClasses.isEmpty) return;
 
       final hasMatch = publicClasses.any(
-        (c) => c.metadata.any((a) => a.name.name == expected.annotation),
+        (c) => hasYLintsAnnotation(c.metadata, {expected.annotation}),
       );
       if (hasMatch) return;
 

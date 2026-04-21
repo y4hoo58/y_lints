@@ -2,59 +2,38 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-/// Ensures datasource methods return only `*Model` types, primitives, or
-/// nothing. Method parameters are unconstrained — request DTOs, query
-/// objects, and auth tokens often don't carry the `Model` suffix.
+import '../_shared/boundary_type.dart';
+import '../_shared/y_lints_annotation.dart';
+
+/// Ensures datasource method signatures only expose data-safe types.
 ///
-/// Allowed return types:
-///   - `void` / no return
-///   - primitives: `bool`, `int`, `double`, `num`, `String`, `DateTime`,
-///     `Uri`, `Duration`, `dynamic`, `Object`, `Null`
-///   - collection/async wrappers whose inner types are allowed:
-///     `Future`, `FutureOr`, `Stream`, `List`, `Map`, `Set`, `Iterable`
-///   - any type whose name ends with `Model`
+/// Classification runs against the resolved type element, not the name:
+///   - `void`, primitives (`bool`, `int`, `double`, `num`, `String`),
+///     `dart:core` value types (`DateTime`, `Duration`, `Uri`), `dynamic`,
+///     `Null`, `Object`
+///   - async / collection wrappers (`Future`, `FutureOr`, `Stream`, `List`,
+///     `Map`, `Set`, `Iterable`) whose inner types are themselves allowed
+///   - any enum
+///   - unresolved type parameters
+///   - any class carrying `@Model`
 ///
-/// Anything else (notably `*Entity`, feature-specific DTO-less types,
-/// random classes) triggers the rule. The DTO boundary must live at the
-/// datasource — entities only appear once repositories convert them.
+/// Anything else — notably `*Entity` domain types, or model-suffixed
+/// classes that never declared `@Model` — triggers the rule. The DTO
+/// boundary must live at the datasource; entities only appear once the
+/// repository has converted them.
 class DatasourceReturnsModel extends DartLintRule {
   const DatasourceReturnsModel() : super(code: _code);
 
   static const _code = LintCode(
     name: 'datasource_returns_model',
     problemMessage:
-        'Datasource methods must return *Model types, primitives, or void. Convert to Entity inside the repository.',
+        'Datasource methods must return @Model types, enums, primitives, or void. Convert to Entity inside the repository.',
   );
 
   static const _datasourceAnnotations = {
     'DataSource',
     'RemoteDataSource',
     'MockDataSource',
-  };
-
-  static const _allowedTypeNames = {
-    'void',
-    'bool',
-    'int',
-    'double',
-    'num',
-    'String',
-    'DateTime',
-    'Uri',
-    'Duration',
-    'dynamic',
-    'Object',
-    'Null',
-  };
-
-  static const _wrapperTypeNames = {
-    'Future',
-    'FutureOr',
-    'Stream',
-    'List',
-    'Map',
-    'Set',
-    'Iterable',
   };
 
   @override
@@ -65,9 +44,9 @@ class DatasourceReturnsModel extends DartLintRule {
   ) {
     context.registry.addCompilationUnit((unit) {
       for (final cls in unit.declarations.whereType<ClassDeclaration>()) {
-        final isDatasource = cls.metadata
-            .any((a) => _datasourceAnnotations.contains(a.name.name));
-        if (!isDatasource) continue;
+        if (!hasYLintsAnnotation(cls.metadata, _datasourceAnnotations)) {
+          continue;
+        }
 
         for (final member in cls.members.whereType<MethodDeclaration>()) {
           _checkType(member.returnType, reporter);
@@ -76,20 +55,12 @@ class DatasourceReturnsModel extends DartLintRule {
     });
   }
 
-  void _checkType(TypeAnnotation? type, ErrorReporter reporter) {
-    if (type is! NamedType) return;
-    final name = type.name2.lexeme;
-    final args = type.typeArguments?.arguments ?? const <TypeAnnotation>[];
-
-    if (_wrapperTypeNames.contains(name)) {
-      for (final arg in args) {
-        _checkType(arg, reporter);
-      }
-      return;
-    }
-    if (_allowedTypeNames.contains(name)) return;
-    if (name.endsWith('Model')) return;
-
-    reporter.atNode(type, _code);
+  void _checkType(TypeAnnotation? annotation, ErrorReporter reporter) {
+    if (annotation is! NamedType) return;
+    final allowed = isAllowedBoundaryType(
+      annotation.type,
+      markerAnnotations: const {'Model'},
+    );
+    if (!allowed) reporter.atNode(annotation, _code);
   }
 }

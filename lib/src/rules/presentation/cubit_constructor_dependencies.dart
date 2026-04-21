@@ -2,22 +2,28 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../_shared/boundary_type.dart';
+import '../_shared/y_lints_annotation.dart';
+
 /// Restricts what a `@FeatureCubit` constructor is allowed to depend on.
 ///
 /// Cubits are presentation orchestrators. They should talk to the domain
 /// through repository contracts — nothing else. This rule inspects every
 /// constructor parameter on a `@FeatureCubit` class and accepts only:
 ///
-///   - primitives: `bool`, `int`, `double`, `num`, `String`, `DateTime`,
-///     `Uri`, `Duration`, `dynamic`, `Object`, `Null`
-///   - types whose name ends with `Repository` (domain contracts)
-///   - types whose name ends with `Entity` (initial/seed domain data)
-///   - wrappers over any of the above: `Future`, `FutureOr`, `Stream`,
-///     `List`, `Map`, `Set`, `Iterable`
+///   - `void`, primitives (`bool`, `int`, `double`, `num`, `String`),
+///     `dart:core` value types (`DateTime`, `Duration`, `Uri`), `dynamic`,
+///     `Null`, `Object`
+///   - async / collection wrappers (`Future`, `FutureOr`, `Stream`, `List`,
+///     `Map`, `Set`, `Iterable`) whose inner types are themselves allowed
+///   - any enum
+///   - any class carrying `@Repository` (domain contract)
+///   - any class carrying `@DomainEntity` (initial/seed domain data)
 ///
-/// Everything else — `*Impl`, `*DataSource`, `Dio`, `http.Client`,
-/// `SharedPreferences`, `FlutterSecureStorage`, random infrastructure — is
-/// rejected. Cubits must not smuggle infrastructure in "just this once".
+/// Classification runs against the resolved element, not the name.
+/// A class called `FooRepository` that never declared `@Repository` does
+/// *not* pass — which is the point: infrastructure can masquerade with the
+/// right suffix, but it cannot fake the annotation.
 ///
 /// Resolution covers:
 ///   - `FooCubit(AuthRepository repo)` (plain parameter)
@@ -25,44 +31,17 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 ///   - `FooCubit(this._authRepository)` (field-initialising; looks up the
 ///     field's declared type when the parameter itself has no annotation)
 ///
-/// `super.x` and function-typed parameters are skipped — they can't be
-/// resolved from the AST alone without the element model.
+/// `super.x` and function-typed parameters are skipped.
 class CubitConstructorDependencies extends DartLintRule {
   const CubitConstructorDependencies() : super(code: _code);
 
   static const _code = LintCode(
     name: 'cubit_constructor_dependencies',
     problemMessage:
-        '@FeatureCubit constructors may only depend on *Repository contracts (plus primitives/entities). Inject a repository, not a *Impl, *DataSource, Dio, or other infrastructure.',
+        '@FeatureCubit constructors may only depend on @Repository contracts, @DomainEntity types, enums, or primitives. Inject a repository, not a *Impl, *DataSource, Dio, or other infrastructure.',
   );
 
-  static const _allowedTypeNames = {
-    'void',
-    'bool',
-    'int',
-    'double',
-    'num',
-    'String',
-    'DateTime',
-    'Uri',
-    'Duration',
-    'dynamic',
-    'Object',
-    'Null',
-  };
-
-  static const _wrapperTypeNames = {
-    'Future',
-    'FutureOr',
-    'Stream',
-    'List',
-    'Map',
-    'Set',
-    'Iterable',
-  };
-
-  static final RegExp _cubitFilePath =
-      RegExp(r'/lib/presentation/.*_cubit\.dart$');
+  static const _allowed = {'Repository', 'DomainEntity'};
 
   @override
   void run(
@@ -70,14 +49,11 @@ class CubitConstructorDependencies extends DartLintRule {
     ErrorReporter reporter,
     CustomLintContext context,
   ) {
-    final filePath = resolver.source.fullName;
-    if (!_cubitFilePath.hasMatch(filePath)) return;
-
     context.registry.addCompilationUnit((unit) {
       for (final cls in unit.declarations.whereType<ClassDeclaration>()) {
-        final isCubit = cls.name.lexeme.endsWith('Cubit') ||
-            cls.metadata.any((a) => a.name.name == 'FeatureCubit');
-        if (!isCubit) continue;
+        if (!hasYLintsAnnotation(cls.metadata, const {'FeatureCubit'})) {
+          continue;
+        }
 
         final fieldTypes = _collectFieldTypes(cls);
 
@@ -117,19 +93,10 @@ class CubitConstructorDependencies extends DartLintRule {
 
   void _checkType(TypeAnnotation type, ErrorReporter reporter) {
     if (type is! NamedType) return;
-    final name = type.name2.lexeme;
-    final args = type.typeArguments?.arguments ?? const <TypeAnnotation>[];
-
-    if (_wrapperTypeNames.contains(name)) {
-      for (final arg in args) {
-        _checkType(arg, reporter);
-      }
-      return;
-    }
-    if (_allowedTypeNames.contains(name)) return;
-    if (name.endsWith('Repository')) return;
-    if (name.endsWith('Entity')) return;
-
-    reporter.atNode(type, _code);
+    final allowed = isAllowedBoundaryType(
+      type.type,
+      markerAnnotations: _allowed,
+    );
+    if (!allowed) reporter.atNode(type, _code);
   }
 }

@@ -1,6 +1,9 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+import 'y_lints_annotation.dart';
 
 /// Enforces class-name suffix conventions based on file location.
 ///
@@ -93,13 +96,15 @@ class ClassSuffixConvention extends DartLintRule {
         // which is a separate concern.
         if (_anyLayerSuffix(name)) continue;
         // Subclass escape hatch: a class whose direct superclass already
-        // ends in a recognized layer suffix is part of a sealed hierarchy
-        // (e.g. WalletInitial extends WalletState, ProfileUpdating extends
-        // ProfileState). We accept any layer suffix — not just the one
-        // this file expects — because misplacement (state classes in a
-        // cubit file) is a separate concern, not a naming concern.
-        final superName = cls.extendsClause?.superclass.name2.lexeme;
-        if (superName != null && _anyLayerSuffix(superName)) continue;
+        // carries a y_lints architectural annotation is part of a sealed
+        // hierarchy (e.g. WalletInitial extends WalletState, where
+        // WalletState is `@FeatureState`). Any layer annotation counts —
+        // not just the one this file expects — because misplacement
+        // (state classes in a cubit file) is a separate concern.
+        final superclass = cls.extendsClause?.superclass;
+        if (superclass != null && _superHasLayerAnnotation(superclass)) {
+          continue;
+        }
         reporter.atNode(cls, expected.code);
       }
     });
@@ -111,6 +116,26 @@ bool _anyLayerSuffix(String name) {
     if (l.accepts.any(name.endsWith)) return true;
   }
   return false;
+}
+
+const _layerAnnotations = {
+  'DomainEntity',
+  'Repository',
+  'RepositoryImpl',
+  'Model',
+  'DataSource',
+  'RemoteDataSource',
+  'MockDataSource',
+  'FeatureCubit',
+  'FeatureState',
+  'FeatureBuilder',
+  'Page',
+};
+
+bool _superHasLayerAnnotation(NamedType superclass) {
+  final element = superclass.element2;
+  if (element is! InterfaceElement2) return false;
+  return elementHasYLintsAnnotation(element, _layerAnnotations);
 }
 
 class _SuffixLayer {

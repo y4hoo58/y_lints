@@ -1,8 +1,10 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../_shared/_architecture_rule.dart';
+import '../_shared/y_lints_annotation.dart';
 
 class ModelPurity extends ArchitectureRule {
   const ModelPurity()
@@ -23,8 +25,7 @@ class ModelPurity extends ArchitectureRule {
 
   static const _extends = LintCode(
     name: 'model_extends_entity',
-    problemMessage:
-        '@Model classes must extend a domain entity (a class whose name ends with "Entity").',
+    problemMessage: '@Model classes must extend a @DomainEntity class.',
   );
 
   @override
@@ -39,9 +40,15 @@ class ModelPurity extends ArchitectureRule {
 
   @override
   void checkClassStructure(ClassDeclaration node, ErrorReporter reporter) {
-    final superName = node.extendsClause?.superclass.name2.lexeme;
-    if (superName == null || !superName.endsWith('Entity')) {
-      reporter.atNode(node.name.length > 0 ? node : node, _extends);
+    final superclass = node.extendsClause?.superclass;
+    if (superclass == null) {
+      reporter.atNode(node, _extends);
+      return;
+    }
+    final element = superclass.element2;
+    if (element is! InterfaceElement2 ||
+        !elementHasYLintsAnnotation(element, const {'DomainEntity'})) {
+      reporter.atNode(node, _extends);
     }
   }
 }

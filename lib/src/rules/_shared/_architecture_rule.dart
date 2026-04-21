@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import 'y_lints_annotation.dart';
+
 /// Shared base for architectural lint rules.
 ///
 /// Subclasses declare:
@@ -63,14 +65,9 @@ abstract class ArchitectureRule extends DartLintRule {
   /// (e.g. "must extend a specific superclass").
   void checkClassStructure(ClassDeclaration node, ErrorReporter reporter) {}
 
-  bool _isAnnotated(ClassDeclaration node) {
-    return node.metadata.any((a) => a.name.name == annotationName);
-  }
+  bool _isAnnotated(ClassDeclaration node) =>
+      hasYLintsAnnotation(node.metadata, {annotationName});
 
-  Annotation? _annotationNode(ClassDeclaration node) {
-    for (final a in node.metadata) {
-      if (a.name.name == annotationName) return a;
-    }
-    return null;
-  }
+  Annotation? _annotationNode(ClassDeclaration node) =>
+      findYLintsAnnotation(node.metadata, {annotationName});
 }

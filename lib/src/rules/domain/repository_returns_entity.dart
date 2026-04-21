@@ -2,59 +2,37 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-/// Ensures repository methods return only `*Entity` types, primitives, or
-/// nothing. Method parameters are unconstrained — repositories often accept
-/// filter/query objects or other value types that don't fit the `Entity`
-/// suffix convention.
+import '../_shared/boundary_type.dart';
+import '../_shared/y_lints_annotation.dart';
+
+/// Ensures repository method signatures only expose domain-safe types.
 ///
-/// Allowed return types:
-///   - `void` / no return
-///   - primitives: `bool`, `int`, `double`, `num`, `String`, `DateTime`,
-///     `Uri`, `Duration`, `dynamic`, `Object`, `Null`
-///   - collection/async wrappers whose inner types are allowed:
-///     `Future`, `FutureOr`, `Stream`, `List`, `Map`, `Set`, `Iterable`
-///   - any type whose name ends with `Entity`
+/// Classification runs against the resolved type element, not the name:
+///   - `void`, primitives (`bool`, `int`, `double`, `num`, `String`),
+///     `dart:core` value types (`DateTime`, `Duration`, `Uri`), `dynamic`,
+///     `Null`, `Object`
+///   - async / collection wrappers (`Future`, `FutureOr`, `Stream`, `List`,
+///     `Map`, `Set`, `Iterable`) whose inner types are themselves allowed
+///   - any enum
+///   - unresolved type parameters
+///   - any class carrying `@DomainEntity`
 ///
-/// Anything else (notably `*Model`, random classes) triggers the rule.
-/// Models live in the data layer; the repository boundary must convert
-/// Models to Entities before returning.
+/// Anything else — notably `*Model` DTOs, or entity-suffixed classes that
+/// never declared `@DomainEntity` — triggers the rule. Models live in the
+/// data layer; the repository boundary must convert them to entities before
+/// handing them to callers.
 class RepositoryReturnsEntity extends DartLintRule {
   const RepositoryReturnsEntity() : super(code: _code);
 
   static const _code = LintCode(
     name: 'repository_returns_entity',
     problemMessage:
-        'Repository methods must return *Entity types, primitives, or void. Models belong in the data layer.',
+        'Repository method signatures must use @DomainEntity types, enums, primitives, or void. Models belong in the data layer.',
   );
 
   static const _repositoryAnnotations = {
     'Repository',
     'RepositoryImpl',
-  };
-
-  static const _allowedTypeNames = {
-    'void',
-    'bool',
-    'int',
-    'double',
-    'num',
-    'String',
-    'DateTime',
-    'Uri',
-    'Duration',
-    'dynamic',
-    'Object',
-    'Null',
-  };
-
-  static const _wrapperTypeNames = {
-    'Future',
-    'FutureOr',
-    'Stream',
-    'List',
-    'Map',
-    'Set',
-    'Iterable',
   };
 
   @override
@@ -65,31 +43,34 @@ class RepositoryReturnsEntity extends DartLintRule {
   ) {
     context.registry.addCompilationUnit((unit) {
       for (final cls in unit.declarations.whereType<ClassDeclaration>()) {
-        final isRepository = cls.metadata
-            .any((a) => _repositoryAnnotations.contains(a.name.name));
-        if (!isRepository) continue;
+        if (!hasYLintsAnnotation(cls.metadata, _repositoryAnnotations)) {
+          continue;
+        }
 
         for (final member in cls.members.whereType<MethodDeclaration>()) {
           _checkType(member.returnType, reporter);
+          for (final param in member.parameters?.parameters ??
+              const <FormalParameter>[]) {
+            _checkType(_typeOf(param), reporter);
+          }
         }
       }
     });
   }
 
-  void _checkType(TypeAnnotation? type, ErrorReporter reporter) {
-    if (type is! NamedType) return;
-    final name = type.name2.lexeme;
-    final args = type.typeArguments?.arguments ?? const <TypeAnnotation>[];
+  void _checkType(TypeAnnotation? annotation, ErrorReporter reporter) {
+    if (annotation is! NamedType) return;
+    final allowed = isAllowedBoundaryType(
+      annotation.type,
+      markerAnnotations: const {'DomainEntity'},
+    );
+    if (!allowed) reporter.atNode(annotation, _code);
+  }
 
-    if (_wrapperTypeNames.contains(name)) {
-      for (final arg in args) {
-        _checkType(arg, reporter);
-      }
-      return;
-    }
-    if (_allowedTypeNames.contains(name)) return;
-    if (name.endsWith('Entity')) return;
-
-    reporter.atNode(type, _code);
+  TypeAnnotation? _typeOf(FormalParameter p) {
+    if (p is DefaultFormalParameter) return _typeOf(p.parameter);
+    if (p is SimpleFormalParameter) return p.type;
+    if (p is FieldFormalParameter) return p.type;
+    return null;
   }
 }

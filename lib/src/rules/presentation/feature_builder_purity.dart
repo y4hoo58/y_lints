@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -7,15 +8,13 @@ import '../_shared/_architecture_rule.dart';
 /// Enforces `@FeatureBuilder` classes:
 ///   - live under `lib/presentation/<feature>/view/`
 ///   - end with `Builder`
-///   - extend `StatelessWidget` or `StatefulWidget`
+///   - extend Flutter's `StatelessWidget` or `StatefulWidget`
 ///
-/// Intent: a feature builder is the widget that consumes a cubit's state
-/// (typically wrapping `BlocBuilder`/`BlocConsumer`). Keeping it under
-/// `view/` separates it from pages and keeps the per-feature layout
-/// predictable.
+/// The widget-base check resolves the superclass element and verifies it
+/// originates from `package:flutter/` — a user-defined class merely named
+/// `StatelessWidget` will not satisfy the rule.
 class FeatureBuilderPurity extends ArchitectureRule {
-  const FeatureBuilderPurity()
-      : super(locationCode: _location);
+  const FeatureBuilderPurity() : super(locationCode: _location);
 
   static const _location = LintCode(
     name: 'feature_builder_location',
@@ -34,7 +33,7 @@ class FeatureBuilderPurity extends ArchitectureRule {
         '@FeatureBuilder classes must extend StatelessWidget or StatefulWidget.',
   );
 
-  static const _widgetBases = {'StatelessWidget', 'StatefulWidget'};
+  static const _flutterWidgetNames = {'StatelessWidget', 'StatefulWidget'};
 
   static final RegExp _path =
       RegExp(r'/lib/presentation/[^/]+/view/[^/]+\.dart$');
@@ -50,9 +49,16 @@ class FeatureBuilderPurity extends ArchitectureRule {
     if (!node.name.lexeme.endsWith('Builder')) {
       reporter.atNode(node, _suffix);
     }
-    final superName = node.extendsClause?.superclass.name2.lexeme;
-    if (superName == null || !_widgetBases.contains(superName)) {
+    final superclass = node.extendsClause?.superclass;
+    if (superclass == null || !_isFlutterWidgetBase(superclass)) {
       reporter.atNode(node, _widget);
     }
+  }
+
+  static bool _isFlutterWidgetBase(NamedType superclass) {
+    final element = superclass.element2;
+    if (element is! InterfaceElement2) return false;
+    if (!_flutterWidgetNames.contains(element.name3)) return false;
+    return element.library2.uri.toString().startsWith('package:flutter/');
   }
 }
