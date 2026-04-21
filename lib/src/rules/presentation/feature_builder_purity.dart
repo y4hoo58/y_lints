@@ -2,7 +2,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-import '_architecture_rule.dart';
+import '../_shared/_architecture_rule.dart';
 
 /// Enforces `@FeatureBuilder` classes:
 ///   - live under `lib/presentation/<feature>/view/`

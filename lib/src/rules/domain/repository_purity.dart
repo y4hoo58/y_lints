@@ -1,6 +1,6 @@
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-import '_architecture_rule.dart';
+import '../_shared/_architecture_rule.dart';
 
 class RepositoryPurity extends ArchitectureRule {
   const RepositoryPurity() : super(locationCode: _location);

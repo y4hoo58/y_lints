@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.4
+
+- `repository_returns_entity` and `datasource_returns_model` now only check
+  method **return types**. Parameter types are unconstrained — filter/query
+  objects, request DTOs, auth tokens, and other non-`Entity`/`Model` types
+  no longer trigger the rule.
+
 ## 0.0.3
 
 - `class_suffix_convention` now accepts both `DataSource` and `Datasource`

@@ -2,10 +2,11 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-/// Ensures datasource classes expose only `*Model` types, primitives, or
-/// nothing in their method signatures (return types and parameters).
+/// Ensures datasource methods return only `*Model` types, primitives, or
+/// nothing. Method parameters are unconstrained — request DTOs, query
+/// objects, and auth tokens often don't carry the `Model` suffix.
 ///
-/// Allowed types:
+/// Allowed return types:
 ///   - `void` / no return
 ///   - primitives: `bool`, `int`, `double`, `num`, `String`, `DateTime`,
 ///     `Uri`, `Duration`, `dynamic`, `Object`, `Null`
@@ -22,7 +23,7 @@ class DatasourceReturnsModel extends DartLintRule {
   static const _code = LintCode(
     name: 'datasource_returns_model',
     problemMessage:
-        'Datasource method signatures must use *Model types, primitives, or void. Convert to Entity inside the repository.',
+        'Datasource methods must return *Model types, primitives, or void. Convert to Entity inside the repository.',
   );
 
   static const _datasourceAnnotations = {
@@ -70,10 +71,6 @@ class DatasourceReturnsModel extends DartLintRule {
 
         for (final member in cls.members.whereType<MethodDeclaration>()) {
           _checkType(member.returnType, reporter);
-          for (final param in member.parameters?.parameters ??
-              const <FormalParameter>[]) {
-            _checkType(_typeOf(param), reporter);
-          }
         }
       }
     });
@@ -94,12 +91,5 @@ class DatasourceReturnsModel extends DartLintRule {
     if (name.endsWith('Model')) return;
 
     reporter.atNode(type, _code);
-  }
-
-  TypeAnnotation? _typeOf(FormalParameter p) {
-    if (p is DefaultFormalParameter) return _typeOf(p.parameter);
-    if (p is SimpleFormalParameter) return p.type;
-    if (p is FieldFormalParameter) return p.type;
-    return null;
   }
 }

@@ -2,10 +2,12 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-/// Ensures repository classes expose only `*Entity` types, primitives, or
-/// nothing in their method signatures (return types and parameters).
+/// Ensures repository methods return only `*Entity` types, primitives, or
+/// nothing. Method parameters are unconstrained — repositories often accept
+/// filter/query objects or other value types that don't fit the `Entity`
+/// suffix convention.
 ///
-/// Allowed types:
+/// Allowed return types:
 ///   - `void` / no return
 ///   - primitives: `bool`, `int`, `double`, `num`, `String`, `DateTime`,
 ///     `Uri`, `Duration`, `dynamic`, `Object`, `Null`
@@ -22,7 +24,7 @@ class RepositoryReturnsEntity extends DartLintRule {
   static const _code = LintCode(
     name: 'repository_returns_entity',
     problemMessage:
-        'Repository method signatures must use *Entity types, primitives, or void. Models belong in the data layer.',
+        'Repository methods must return *Entity types, primitives, or void. Models belong in the data layer.',
   );
 
   static const _repositoryAnnotations = {
@@ -69,10 +71,6 @@ class RepositoryReturnsEntity extends DartLintRule {
 
         for (final member in cls.members.whereType<MethodDeclaration>()) {
           _checkType(member.returnType, reporter);
-          for (final param in member.parameters?.parameters ??
-              const <FormalParameter>[]) {
-            _checkType(_typeOf(param), reporter);
-          }
         }
       }
     });
@@ -93,12 +91,5 @@ class RepositoryReturnsEntity extends DartLintRule {
     if (name.endsWith('Entity')) return;
 
     reporter.atNode(type, _code);
-  }
-
-  TypeAnnotation? _typeOf(FormalParameter p) {
-    if (p is DefaultFormalParameter) return _typeOf(p.parameter);
-    if (p is SimpleFormalParameter) return p.type;
-    if (p is FieldFormalParameter) return p.type;
-    return null;
   }
 }
