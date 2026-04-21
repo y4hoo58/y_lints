@@ -23,9 +23,14 @@ lib/
 │       └── implementations/
 │           ├── remote_user_data_source.dart  # @RemoteDataSource
 │           └── mock_user_data_source.dart    # @MockDataSource
-└── presentation/user/cubits/user_cubit/
-    ├── user_cubit.dart                    # @FeatureCubit
-    └── user_state.dart                    # @FeatureState
+└── presentation/user/
+    ├── cubits/user_cubit/
+    │   ├── user_cubit.dart                # @FeatureCubit
+    │   └── user_state.dart                # @FeatureState
+    ├── view/
+    │   └── user_builder.dart              # @FeatureBuilder
+    └── pages/
+        └── user_page.dart                 # @Page
 ```
 
 Move any file out of its expected folder — or drop its annotation — to see

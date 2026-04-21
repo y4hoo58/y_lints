@@ -77,9 +77,14 @@ lib/
 │               ├── remote_*.dart  # @RemoteDataSource
 │               └── mock_*.dart    # @MockDataSource
 └── presentation/
-    └── <feature>/cubits/<cubit_name>/
-        ├── *_cubit.dart       # @FeatureCubit
-        └── *_state.dart       # @FeatureState
+    └── <feature>/
+        ├── cubits/<cubit_name>/
+        │   ├── *_cubit.dart   # @FeatureCubit
+        │   └── *_state.dart   # @FeatureState
+        ├── view/
+        │   └── *_builder.dart # @FeatureBuilder — state consumer
+        └── pages/             # @Page — any location, Page suffix
+            └── *_page.dart
 ```
 
 ## Rules
@@ -95,6 +100,8 @@ lib/
 | `model_purity` | `@Model` classes live under `lib/data/models/`, end in `_model.dart`, and extend an `*Entity`. |
 | `feature_cubit_purity` | `@FeatureCubit` classes live under `lib/presentation/<feature>/cubits/<cubit_name>/` as `*_cubit.dart`. |
 | `feature_state_purity` | `@FeatureState` classes live alongside their cubit as `*_state.dart`. |
+| `page_purity` | `@Page` classes end with `Page`. |
+| `feature_builder_purity` | `@FeatureBuilder` classes live under `lib/presentation/<feature>/view/`, end with `Builder`, and extend `StatelessWidget`/`StatefulWidget`. |
 | `datasource_returns_model` | Datasource methods return `*Model` (or collections of them), not entities. |
 | `repository_returns_entity` | Repository methods return `*Entity` (or collections of them), not models. |
 | `datasource_import_boundary` | Datasources never import from `lib/domain/` or `lib/presentation/`. |

@@ -7,10 +7,12 @@ import 'src/rules/datasource_contract_implemented.dart';
 import 'src/rules/datasource_import_boundary.dart';
 import 'src/rules/datasource_returns_model.dart';
 import 'src/rules/domain_entity_purity.dart';
+import 'src/rules/feature_builder_purity.dart';
 import 'src/rules/feature_cubit_purity.dart';
 import 'src/rules/feature_state_purity.dart';
 import 'src/rules/mock_data_source_purity.dart';
 import 'src/rules/model_purity.dart';
+import 'src/rules/page_purity.dart';
 import 'src/rules/remote_data_source_purity.dart';
 import 'src/rules/repository_impl_purity.dart';
 import 'src/rules/repository_purity.dart';
@@ -38,5 +40,7 @@ class _YLints extends PluginBase {
         CubitConstructorDependencies(),
         ClassSuffixConvention(),
         DatasourceContractImplemented(),
+        PagePurity(),
+        FeatureBuilderPurity(),
       ];
 }

@@ -21,7 +21,8 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// A class is considered a concrete datasource if:
 ///   1. it carries `@RemoteDataSource` or `@MockDataSource`, OR
 ///   2. it lives in a file named `remote_*.dart` or `mock_*.dart` under
-///      `lib/data/datasources/**` and its class name ends with `DataSource`.
+///      `lib/data/datasources/**` and its class name ends with `DataSource`
+///      (or `Datasource`).
 ///
 /// The filename/path fallback makes the rule useful before annotations
 /// are applied across the codebase.
@@ -55,8 +56,8 @@ class DatasourceContractImplemented extends DartLintRule {
 
         final annotated =
             cls.metadata.any((a) => _annotations.contains(a.name.name));
-        final shapedLikeDatasource =
-            filenameMatches && name.endsWith('DataSource');
+        final shapedLikeDatasource = filenameMatches &&
+            (name.endsWith('DataSource') || name.endsWith('Datasource'));
 
         if (!annotated && !shapedLikeDatasource) continue;
 

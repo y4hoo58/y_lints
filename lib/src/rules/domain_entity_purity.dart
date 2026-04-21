@@ -1,3 +1,5 @@
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '_architecture_rule.dart';
@@ -11,10 +13,27 @@ class DomainEntityPurity extends ArchitectureRule {
         '@DomainEntity classes must live under lib/domain/entities/.',
   );
 
+  static const _namedOnly = LintCode(
+    name: 'domain_entity_named_parameters',
+    problemMessage:
+        '@DomainEntity constructors must take named parameters only.',
+  );
+
   @override
   String get annotationName => 'DomainEntity';
 
   @override
   bool isAllowedPath(String filePath) =>
       filePath.contains('/lib/domain/entities/');
+
+  @override
+  void checkClassStructure(ClassDeclaration node, ErrorReporter reporter) {
+    for (final ctor in node.members.whereType<ConstructorDeclaration>()) {
+      for (final param in ctor.parameters.parameters) {
+        if (!param.isNamed) {
+          reporter.atNode(param, _namedOnly);
+        }
+      }
+    }
+  }
 }

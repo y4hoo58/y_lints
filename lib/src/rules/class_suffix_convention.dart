@@ -13,7 +13,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 ///   - `lib/domain/repositories/**`               → `Repository`
 ///   - `lib/data/repositories/**`                 → `RepositoryImpl`
 ///   - `lib/data/models/**_model.dart`            → `Model`
-///   - `lib/data/datasources/**`                  → `DataSource`
+///   - `lib/data/datasources/**`                  → `DataSource` (or `Datasource`)
 ///   - `lib/presentation/**_cubit.dart`           → `Cubit`
 ///   - `lib/presentation/**_state.dart`           → `State`
 ///
@@ -48,6 +48,7 @@ class ClassSuffixConvention extends DartLintRule {
     ),
     _SuffixLayer(
       suffix: 'DataSource',
+      alternates: ['Datasource'],
       matches: (path, file) => path.contains('/lib/data/datasources/'),
     ),
     _SuffixLayer(
@@ -85,7 +86,7 @@ class ClassSuffixConvention extends DartLintRule {
       for (final cls in unit.declarations.whereType<ClassDeclaration>()) {
         final name = cls.name.lexeme;
         if (name.startsWith('_')) continue;
-        if (name.endsWith(expected.suffix)) continue;
+        if (expected.accepts.any(name.endsWith)) continue;
         // Cross-layer escape hatch: a class already named with *some*
         // layer suffix (e.g. ProfileState declared inside a *_cubit.dart
         // file) isn't a naming violation — it's a misplaced-file issue,
@@ -107,20 +108,26 @@ class ClassSuffixConvention extends DartLintRule {
 
 bool _anyLayerSuffix(String name) {
   for (final l in ClassSuffixConvention._layers) {
-    if (name.endsWith(l.suffix)) return true;
+    if (l.accepts.any(name.endsWith)) return true;
   }
   return false;
 }
 
 class _SuffixLayer {
-  _SuffixLayer({required this.suffix, required this.matches})
-      : code = LintCode(
+  _SuffixLayer({
+    required this.suffix,
+    required this.matches,
+    List<String> alternates = const [],
+  })  : accepts = [suffix, ...alternates],
+        code = LintCode(
           name: 'class_suffix_${_snake(suffix)}',
-          problemMessage:
-              'Public classes in this layer must end with "$suffix".',
+          problemMessage: alternates.isEmpty
+              ? 'Public classes in this layer must end with "$suffix".'
+              : 'Public classes in this layer must end with "$suffix" (or ${alternates.map((a) => '"$a"').join(', ')}).',
         );
 
   final String suffix;
+  final List<String> accepts;
   final bool Function(String path, String file) matches;
   final LintCode code;
 }

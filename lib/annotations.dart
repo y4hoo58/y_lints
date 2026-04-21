@@ -77,3 +77,24 @@ class FeatureCubit {
 class MockDataSource {
   const MockDataSource();
 }
+
+/// Marks a class as a routable page.
+///
+/// Enforced by `page_purity`:
+/// - Class name must end with `Page`.
+///
+/// Location and superclass are intentionally not constrained.
+class Page {
+  const Page();
+}
+
+/// Marks a widget class as a cubit-state consumer (typically wrapping
+/// `BlocBuilder`/`BlocConsumer`).
+///
+/// Enforced by `feature_builder_purity`:
+/// - Must live in `lib/presentation/<feature>/view/`.
+/// - Class name must end with `Builder`.
+/// - Must extend `StatelessWidget` or `StatefulWidget`.
+class FeatureBuilder {
+  const FeatureBuilder();
+}
