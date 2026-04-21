@@ -12,13 +12,13 @@ class MockDataSourcePurity extends ArchitectureRule {
         );
 
   static const _location = LintCode(
-    name: 'mock_data_source_location',
+    name: 'mock_datasource_location',
     problemMessage:
         '@MockDataSource classes must live in lib/data/datasources/<feature>/implementations/.',
   );
 
   static const _fileName = LintCode(
-    name: 'mock_data_source_filename',
+    name: 'mock_datasource_filename',
     problemMessage:
         '@MockDataSource files must be named mock_*.dart for discoverability.',
   );

@@ -24,7 +24,7 @@ class RepositoryImpl {
 
 /// Marks a class as an abstract datasource contract.
 ///
-/// Enforced by `data_source_purity`:
+/// Enforced by `datasource_purity`:
 /// - Must live in `lib/data/datasources/<feature>/` (not in `implementations/`).
 /// - File name must start with `i_`.
 class DataSource {
@@ -33,7 +33,7 @@ class DataSource {
 
 /// Marks a class as a remote (network-backed) datasource implementation.
 ///
-/// Enforced by `remote_data_source_purity`:
+/// Enforced by `remote_datasource_purity`:
 /// - Must live in `lib/data/datasources/<feature>/implementations/`.
 /// - File name must start with `remote_`.
 class RemoteDataSource {
@@ -71,7 +71,7 @@ class FeatureCubit {
 
 /// Marks a class as a mock/offline datasource implementation.
 ///
-/// Enforced by `mock_data_source_purity`:
+/// Enforced by `mock_datasource_purity`:
 /// - Must live in `lib/data/datasources/<feature>/implementations/`.
 /// - File name must start with `mock_`.
 class MockDataSource {

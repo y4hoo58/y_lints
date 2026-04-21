@@ -12,13 +12,13 @@ class DataSourcePurity extends ArchitectureRule {
         );
 
   static const _location = LintCode(
-    name: 'data_source_location',
+    name: 'datasource_location',
     problemMessage:
         '@DataSource contracts must live in lib/data/datasources/<feature>/ (not inside implementations/).',
   );
 
   static const _fileName = LintCode(
-    name: 'data_source_filename',
+    name: 'datasource_filename',
     problemMessage:
         '@DataSource files must be named i_*.dart to mark them as interfaces.',
   );

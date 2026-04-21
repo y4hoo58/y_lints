@@ -94,9 +94,9 @@ lib/
 | `domain_entity_purity` | `@DomainEntity` classes live under `lib/domain/entities/`. |
 | `repository_purity` | `@Repository` classes live under `lib/domain/repositories/`. |
 | `repository_impl_purity` | `@RepositoryImpl` classes live under `lib/data/repositories/`. |
-| `data_source_purity` | `@DataSource` contracts live under `lib/data/datasources/<feature>/` with an `i_` file prefix. |
-| `remote_data_source_purity` | `@RemoteDataSource` classes live in `.../implementations/` with a `remote_` file prefix. |
-| `mock_data_source_purity` | `@MockDataSource` classes live in `.../implementations/` with a `mock_` file prefix. |
+| `datasource_purity` | `@DataSource` contracts live under `lib/data/datasources/<feature>/` with an `i_` file prefix. |
+| `remote_datasource_purity` | `@RemoteDataSource` classes live in `.../implementations/` with a `remote_` file prefix. |
+| `mock_datasource_purity` | `@MockDataSource` classes live in `.../implementations/` with a `mock_` file prefix. |
 | `model_purity` | `@Model` classes live under `lib/data/models/`, end in `_model.dart`, and extend an `*Entity`. |
 | `feature_cubit_purity` | `@FeatureCubit` classes live under `lib/presentation/<feature>/cubits/<cubit_name>/` as `*_cubit.dart`. |
 | `feature_state_purity` | `@FeatureState` classes live alongside their cubit as `*_state.dart`. |
